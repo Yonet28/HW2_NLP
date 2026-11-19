@@ -12,8 +12,9 @@ come from memory.
 
 * Python 3.10 or later, one NVIDIA GPU with 16 GB (tested setting: Google Colab, free T4).
 * `pip install -r requirements.txt`
-* Models are loaded from Hugging Face in float16. Llama 3.2 is gated: accept its license on
-  Hugging Face and run `huggingface-cli login` first.
+* Models are loaded from Hugging Face in float16. For Llama 3.2 we use `unsloth/Llama-3.2-3B-Instruct`,
+  an ungated copy of the official weights (`meta-llama/Llama-3.2-3B-Instruct` works too after
+  accepting its license and running `huggingface-cli login`).
 
 ## Layout
 
@@ -24,6 +25,7 @@ come from memory.
 | `patchbench/run.py` | Runs one model, appends one JSON line per prompt to `results/<model>.jsonl` (resumable) |
 | `patchbench/analyze.py` | Builds every table and figure from the JSONL files |
 | `notebooks/run_colab.ipynb` | Colab notebook that runs everything, with results saved to Google Drive |
+| `notebooks/run_kaggle.ipynb` | Kaggle notebook running two models in parallel on two T4 GPUs |
 
 ## Experiments
 
@@ -33,17 +35,19 @@ come from memory.
 | `oracle` | only the target patch as context (both templates), and a closed-book condition | Table 2 |
 | `length` | content-matched EN and FR, token-matched EN-long and FR-short, English +50%, and the fixed-token-budget baseline used in prior work | Table 2, Figure 2, H3 |
 | `crosslang` | context language × question language | Table 2 |
+| `promptfmt` | same items as `main` (no distractor), with the pilot prompt (no answer format) and/or without padding | Table 2, comparison with the pilot |
 
-Presets (`--preset`): `smoke` (a few items, to check the setup), `standard` (used in the paper),
-`full` (larger, if compute allows). Sizes are in `patchbench/experiments.py`.
+Presets (`--preset`): `smoke` (a few items, to check the setup), `lean` (used in the paper, sized for a
+free T4), `standard` and `full` (larger, if compute allows). Sizes are in `patchbench/experiments.py`.
 
 ## Reproducing the paper
 
 ```bash
-# 1. Run each model (the paper uses the standard preset and seed 0)
-python -m patchbench.run --model Qwen/Qwen2.5-1.5B-Instruct --preset standard --batch_size 8 --out results/
-python -m patchbench.run --model Qwen/Qwen2.5-3B-Instruct   --preset standard --batch_size 4 --out results/
-python -m patchbench.run --model meta-llama/Llama-3.2-3B-Instruct --preset standard --batch_size 4 --out results/
+# 1. Run each model (seed 0; the Qwen models use the standard preset, Llama the lean preset,
+#    whose items are the first items of the standard preset; Llama runs main and oracle only)
+python -m patchbench.run --model Qwen/Qwen2.5-3B-Instruct   --preset standard --batch_size 2 --out results/
+python -m patchbench.run --model Qwen/Qwen2.5-1.5B-Instruct --preset standard --batch_size 4 --out results/
+python -m patchbench.run --model unsloth/Llama-3.2-3B-Instruct --preset lean --experiments main,oracle --batch_size 2 --out results/
 
 # 2. Build all tables and figures
 python -m patchbench.analyze --results results/ --out results/analysis/
