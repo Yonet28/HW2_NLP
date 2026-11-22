@@ -258,7 +258,7 @@ def fig_decomposition_column(rows, out):
     ax.legend(fontsize=7, frameon=False, loc="upper right")
     fig.tight_layout()
     for ext in ("pdf", "png"):
-        fig.savefig(os.path.join(out, f"fig_decomposition_col.{ext}"), dpi=220)
+        fig.savefig(os.path.join(out, f"fig2_decomposition.{ext}"), dpi=220)
     plt.close(fig)
 
 
@@ -304,7 +304,7 @@ def fig_position(df, out, rng):
     axes[0][0].legend(frameon=False, fontsize=8, loc="lower left")
     fig.tight_layout()
     for ext in ("pdf", "png"):
-        fig.savefig(os.path.join(out, f"fig_position.{ext}"), dpi=200)
+        fig.savefig(os.path.join(out, f"fig3_position.{ext}"), dpi=200)
     plt.close(fig)
 
 
@@ -337,7 +337,7 @@ def fig_decomposition(rows, out):
         ax.tick_params(colors=MUTED, labelsize=7)
     fig.tight_layout()
     for ext in ("pdf", "png"):
-        fig.savefig(os.path.join(out, f"fig_decomposition.{ext}"), dpi=200)
+        fig.savefig(os.path.join(out, f"fig_decomposition_wide.{ext}"), dpi=200)
     plt.close(fig)
 
 
@@ -355,7 +355,7 @@ def examples(df, out, k=12, seed=0):
         lines.append(f"- **{r.model_short}**, {r.ctx_lang.upper()}, {r.template}, patch {r.pos + 1}, "
                      f"{r.d} distractors. Gold {r.answer:g}, previous {r.previous:g}. "
                      f"Output: `{r.output}`. Trap: {bool(r.trap)}, previous value: {bool(r.trap_previous)}.")
-    with open(os.path.join(out, "examples_failures.md"), "w") as fh:
+    with open(os.path.join(out, "table7_failures.md"), "w") as fh:
         fh.write("\n".join(lines) + "\n")
 
 
@@ -385,12 +385,12 @@ def main():
 
     main_rows = table_main(df, rng)
     t1 = pd.DataFrame([{k: v for k, v in r.items() if not k.startswith("_")} for r in main_rows])
-    t1.to_csv(os.path.join(args.out, "table1_main.csv"), index=False)
-    with open(os.path.join(args.out, "table1_main.tex"), "w") as fh:
+    t1.to_csv(os.path.join(args.out, "table2_main.csv"), index=False)
+    with open(os.path.join(args.out, "table2_main.tex"), "w") as fh:
         fh.write(t1.to_latex(index=False))
 
     dec, verdicts = decomposition(df, rng)
-    with open(os.path.join(args.out, "table2_decomposition.json"), "w") as fh:
+    with open(os.path.join(args.out, "table3_decomposition.json"), "w") as fh:
         json.dump(to_jsonable(dec), fh, indent=1)
     flat = []
     for r in dec:
@@ -402,18 +402,18 @@ def main():
                 row[k] = v
         flat.append(row)
     t2 = pd.DataFrame(flat).set_index("model").T
-    t2.to_csv(os.path.join(args.out, "table2_decomposition.csv"))
-    with open(os.path.join(args.out, "table2_decomposition.tex"), "w") as fh:
+    t2.to_csv(os.path.join(args.out, "table3_decomposition.csv"))
+    with open(os.path.join(args.out, "table3_decomposition.tex"), "w") as fh:
         fh.write(t2.to_latex())
 
     h2 = h2_interaction(df, rng)
-    inter = interference(df); inter.to_csv(os.path.join(args.out, "table3_interference.csv"))
+    inter = interference(df); inter.to_csv(os.path.join(args.out, "table5_interference.csv"))
     pars = parsing(df); pars.to_csv(os.path.join(args.out, "table_parsing.csv"))
     fig_position(df, args.out, rng)
     fig_decomposition(dec, args.out)
     fig_decomposition_column(dec, args.out)
-    templates(df).to_csv(os.path.join(args.out, "table5_templates.csv"))
-    error_share(df).to_csv(os.path.join(args.out, "table4_error_share.csv"))
+    templates(df).to_csv(os.path.join(args.out, "table6_templates.csv"))
+    error_share(df).to_csv(os.path.join(args.out, "table5_error_share.csv"))
     format_compliance(df).to_csv(os.path.join(args.out, "format_compliance.csv"), index=False)
     pf_rows = []
     for r in dec:
@@ -424,7 +424,7 @@ def main():
                                 "padding": int(cond[-1]), "gap": fmt(*g[:3]), "n_pairs": g[3],
                                 "acc_fr": round(r[f"promptfmt_{cond}_acc_fr"], 1),
                                 "previous_value_fr": round(r[f"promptfmt_{cond}_prev_fr"], 1)})
-    pd.DataFrame(pf_rows).to_csv(os.path.join(args.out, "table7_promptfmt.csv"), index=False)
+    pd.DataFrame(pf_rows).to_csv(os.path.join(args.out, "table4_promptfmt.csv"), index=False)
     examples(df, args.out, seed=args.seed)
 
     summary = {
